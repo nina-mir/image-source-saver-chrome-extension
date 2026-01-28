@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Day1 — Context Menu Logger",
+  "version": "0.1",
+  "description": "Right-click an image -> log image and page info (MV3 example).",
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png" },
+  "permissions": ["contextMenus", "tabs", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

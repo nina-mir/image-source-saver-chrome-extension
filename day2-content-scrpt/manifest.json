@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Day2 — Image logger",
+  "version": "0.2",
+  "description": "Right-click an image -> log image and page info (MV3 example).",
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png" },
+  "permissions": ["contextMenus", "tabs", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
