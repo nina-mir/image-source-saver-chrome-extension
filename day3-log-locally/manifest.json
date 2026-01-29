@@ -4,7 +4,7 @@
   "version": "0.3",
   "description": "Right-click an image -> log image/page info + downloading the image file",
   "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png" },
-  "permissions": ["contextMenus", "tabs", "scripting"],
+  "permissions": ["contextMenus", "tabs", "scripting", "storage", "downloads"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
