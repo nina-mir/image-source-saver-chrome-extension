@@ -6,7 +6,6 @@
 
 console.log("✅ Service worker loaded", new Date().toISOString());
 
-
 chrome.runtime.onInstalled.addListener(async () => {
     chrome.contextMenus.create({
         id: "download-image+info",
@@ -17,66 +16,99 @@ chrome.runtime.onInstalled.addListener(async () => {
 });
 
 // Single click handler for menu item
-
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-    const timestamp = new Date().toISOString();
+
+    // Don't take any action if this context menu option is not clicked!
+    if (info.menuItemId !== "download-image+info") return;
 
     if (!tab?.id) {
         console.warn("No tab ID available");
         return;
     }
 
-    // Download image logic
+    const createdAt = new Date().toISOString();
+    const imageUrl = info.srcUrl;
 
-    function onFailed(error) {
-        console.log(`Download failed: ${error}`);
-    }
-
+    // # 1 - start downloading 
     chrome.downloads.download({
-        url: info.srcUrl,
+        url: imageUrl,
         // filename: 'suggested-filename.png', // Optional: suggests a path relative to the default downloads directory
         conflictAction: 'uniquify', // Optional: renames the file if a conflict exists (e.g., 'file(1).png')
         saveAs: false // Optional: if true, the "Save As" dialog will appear
     }, (downloadId) => {
-        console.log(`Download started with ID: ${downloadId}`);
-        // Optional: revoke the object URL once the download starts
-        // Note: this may cause issues if the download is delayed, handle with care.
-        // URL.revokeObjectURL(objectUrl); 
-    }).then(null, onFailed);
 
-
-    // send message to content.js
-    chrome.tabs.sendMessage(tab.id, {
-        type: "DOWNLOAD_EXTRACT_IMAGE_METADATA",
-        imageUrl: info.srcUrl
-    }, (response) => {
-        // If there was no receiver, chrome.runtime.lastError is set.
+        const finalDownloadId = chrome.runtime.lastError ? null : downloadId;
         if (chrome.runtime.lastError) {
-            // Graceful fallback citation record
-            const fallback = {
-                ok: false,
-                reason: "no_content_script",
-                pageUrl: tab.url || null,
-                pageTitle: tab.title || null,
-                imageUrl: info.srcUrl || null,
-                timestamp: timestamp
-            };
-
-            // Do whatever you would do with a normal citation record:
-            // for now we log it — replace this with chrome.storage or upload as needed.
-            console.warn("Content script not available; using fallback citation:", chrome.runtime.lastError.message);
-            console.log("Fallback citation:", fallback);
-            return; // IMPORTANT — stop here
+            // Catch initialization errors (e.g., malformed URL, permissions)
+            console.error("Error starting download:", chrome.runtime.lastError.message);
         }
 
-        // Success: content script replied with a full record
-        console.log("Citation record:", response);
-    });
+        // # 2 - Ask content script for metadata
+        // send message to content.js
+        chrome.tabs.sendMessage(tab.id, {
+            type: "DOWNLOAD_EXTRACT_IMAGE_METADATA",
+            imageUrl
+        }, async (response) => {
 
-    // Extra logs per menu item
-    const ts = new Date().toISOString();
-    if (info.menuItemId === "download-image+info") {
-        console.log(`[${ts}] download-image+info clicked`,
-            { pageTitle: tab.title, imageSrc: info.srcUrl, pageUrl: tab.url });
-    }
+            let record;
+            // If there was no receiver, chrome.runtime.lastError is set.
+            if (chrome.runtime.lastError) {
+                // Graceful fallback citation record
+                record = {
+                    id: crypto.randomUUID(),
+                    createdAt,
+                    ok: false,
+                    reason: "no_content_script",
+                    pageUrl: tab.url || null,
+                    pageTitle: tab.title || null,
+                    imageUrl: imageUrl || null,
+                    downloadId: finalDownloadId,
+                    notes: "",
+                };
+
+                // Do whatever you would do with a normal citation record:
+                // for now we log it — replace this with chrome.storage or upload as needed.
+                console.warn("Content script not available; using fallback citation:", chrome.runtime.lastError.message);
+                console.log("Fallback citation:", record);
+
+            } else if (!response?.ok) {
+                record = {
+                    id: crypto.randomUUID(),
+                    createdAt,
+                    ok: false,
+                    reason: response?.error || "metadata_extraction_failed",
+                    pageUrl: response?.pageUrl ?? tab.url ?? null,
+                    pageTitle: response?.pageTitle ?? tab.title ?? null,
+                    imageUrl: response?.imageUrl ?? imageUrl ?? null,
+                    downloadId: finalDownloadId,
+                    notes: "",
+                };
+            
+            } else {
+                    record = {
+                        id: crypto.randomUUID(),
+                        createdAt,
+                        ok: true,
+                        pageUrl: response?.pageUrl ?? tab.url ?? null,
+                        pageTitle: response?.pageTitle ?? tab.title ?? null,
+                        imageUrl: response?.imageUrl ?? imageUrl ?? null,
+                        alt: response?.alt ?? "",
+                        title: response?.title ?? "",
+                        ariaLabel: response?.ariaLabel ?? "",
+                        downloadId: finalDownloadId,
+                        notes: "",
+                    };
+                }
+
+                // # 3 -- append to storage
+
+                const { records = [] } = await chrome.storage.local.get({ records: [] });
+                records.push(record);
+                await chrome.storage.local.set({ records });
+                console.log("Total records:", records.length);
+                console.log("✅ Saved citation record:", record);
+            });
+
+    })
+
 });
