@@ -51,7 +51,16 @@ async function renderLast20() {
         `Total records: ${records.length} (showing ${last20.length})`)
 
     const ul = document.querySelector('#records')
+    ul.innerHTML = ''
 
     // TO-DO finish adding the list items li to the ul with proper text
+    for (const r of last20) {
+        li = document.createElement('li')
+        li.textContent = `${r.createdAt} - ${r.pageTitle || r.pageUrl} - ${r.ok ? "YES✅" : "NO⚠️"}`
+        ul.appendChild('li')
 
+    }
 }
+
+document.getElementById("view-last-20").addEventListener("click", renderLast20);
+
