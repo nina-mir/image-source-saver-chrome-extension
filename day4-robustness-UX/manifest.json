@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Day4 — Image logger robustness UX",
+  "version": "0.4",
+  "description": "Right-click an image -> log image/page info + downloading the image file",
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png" },
+  "permissions": ["contextMenus", "tabs", "storage", "downloads"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
