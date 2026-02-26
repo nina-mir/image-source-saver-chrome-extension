@@ -93,6 +93,82 @@ async function renderLast20() {
 
 }
 
+
+// CSV related code
+
+// notes: If later add nested objects (e.g., confidence: {score: 0.8}), CSV will break unless flatten.
+
+
+
+function escapeCSV(value) {
+  if (value === null || value === undefined) return "";
+
+  let str = String(value);
+
+  // Step 1: Escape internal quotes
+  str = str.replace(/"/g, '""');
+
+  // Step 2: If it contains special chars, wrap in quotes
+  if (/[",\n]/.test(str)) {
+    str = `"${str}"`;
+  }
+
+  return str;
+}
+
+function recordsToCSV(records) {
+    // CSV headers
+  const headers = [
+    "id",
+    "createdAt",
+    "ok",
+    "reason",
+    "pageTitle",
+    "pageUrl",
+    "imageUrl",
+    "alt",
+    "title",
+    "ariaLabel",
+    "downloadId",
+    "notes"
+  ];
+
+  const headerRow = headers.join(",");
+
+  const rows = records.map(record => {
+    return headers
+      .map(header => escapeCSV(record[header]))
+      .join(",");
+  });
+
+  return [headerRow, ...rows].join("\n");
+}
+
+async function downloadCSV() {
+  const records = await getRecords();
+  const csvText = recordsToCSV(records);
+
+  const BOM = "\uFEFF"; // Excel compatability!
+
+  const blob = new Blob([BOM + csvText], { type: "text/csv;charset=utf-8;" });
+//   const blob = new Blob([csvText], { type: "text/csv" });
+  const blobUrl = URL.createObjectURL(blob);
+
+  chrome.downloads.download(
+    {
+      url: blobUrl,
+      filename: "img-citation-logs.csv",
+      saveAs: false,
+    },
+    () => URL.revokeObjectURL(blobUrl)
+  );
+}
+
+document.getElementById("export-csv")
+  .addEventListener("click", downloadCSV);
+
+
+
 document.getElementById("view-last-20").addEventListener("click", renderLast20);
 
 document.addEventListener("DOMContentLoaded", renderLast20);
