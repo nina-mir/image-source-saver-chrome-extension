@@ -27,6 +27,27 @@ function sendMessageWithRetry(tabId, message, retryDelayMs = 350) {
   });
 }
 
+// helper for USER UX improvement ✅❌
+async function flashSuccessBadge() {
+  try {
+    await chrome.action.setBadgeBackgroundColor({ color: "#2e7d32" });
+    await chrome.action.setBadgeText({ text: "✓" });
+    setTimeout(() => chrome.action.setBadgeText({ text: "" }), 1800);
+  } catch (err) {
+    console.warn("Success badge failed:", err);
+  }
+}
+
+async function flashWarningBadge() {
+  try {
+    await chrome.action.setBadgeBackgroundColor({ color: "#b26a00" });
+    await chrome.action.setBadgeText({ text: "!" });
+    setTimeout(() => chrome.action.setBadgeText({ text: "" }), 1800);
+  } catch (err) {
+    console.warn("Warning badge failed:", err);
+  }
+}
+
 chrome.runtime.onInstalled.addListener(async () => {
   chrome.contextMenus.create({
     id: "download-image+info",
@@ -131,6 +152,14 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           notes: "",
         };
       }
+
+      // flash relevant badge info depending on response.ok status
+      if (record.ok) {
+        await flashSuccessBadge();
+      } else {
+        await flashWarningBadge();
+      }
+
 
       // # 3 -- append to storage
       const { records = [] } = await chrome.storage.local.get({ records: [] });

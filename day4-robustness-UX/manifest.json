@@ -4,6 +4,9 @@
   "version": "0.4",
   "description": "Right-click an image -> log image/page info + downloading the image file",
   "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png" },
+  "action": {
+    "default_title": "image-citation-tool"
+  },
   "permissions": ["contextMenus", "tabs", "storage", "downloads"],
   "host_permissions": ["<all_urls>"],
   "background": {
