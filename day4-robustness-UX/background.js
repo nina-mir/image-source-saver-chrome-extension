@@ -27,6 +27,20 @@ function sendMessageWithRetry(tabId, message, retryDelayMs = 350) {
   });
 }
 
+// helper function to query if the content script is injected or not
+async function ensureContentScript(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"]
+    });
+    return true;
+  } catch (err) {
+    console.warn("Failed to inject content.js:", err);
+    return false;
+  }
+}
+
 // helper for USER UX improvement ✅❌
 async function flashSuccessBadge() {
   try {
@@ -85,8 +99,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         console.error("Error starting download:", chrome.runtime.lastError.message);
       }
 
-      // # 2 - Ask content script for metadata (with one quick retry)
-      const { response, lastError } = await sendMessageWithRetry(
+      // # 2 - Ensure content script exists, then ask for metadata
+      await ensureContentScript(tab.id);
+
+      let { response, lastError } = await sendMessageWithRetry(
         tab.id,
         {
           type: "DOWNLOAD_EXTRACT_IMAGE_METADATA",
@@ -94,6 +110,25 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         },
         350
       );
+
+      // If messaging still failed, try one more inject + retry
+      if (lastError) {
+        const injected = await ensureContentScript(tab.id);
+
+        if (injected) {
+          const retryResult = await sendMessageWithRetry(
+            tab.id,
+            {
+              type: "DOWNLOAD_EXTRACT_IMAGE_METADATA",
+              imageUrl,
+            },
+            350
+          );
+
+          response = retryResult.response;
+          lastError = retryResult.lastError;
+        }
+      }
 
       let record;
 
