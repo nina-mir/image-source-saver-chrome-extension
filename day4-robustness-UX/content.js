@@ -1,11 +1,10 @@
+"use strict";
 // add an injection guard inside content.js
 // Wrapping the entire whole content.js so it only initializes once per page.
-
 if (window.__IMG_CITATION_TOOL_LOADED__) {
   console.log("content.js already loaded");
 } else {
   window.__IMG_CITATION_TOOL_LOADED__ = true;
-  "use strict";
 
   function normalizeUrl(url) {
     try {

@@ -100,8 +100,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       }
 
       // # 2 - Ensure content script exists, then ask for metadata
-      await ensureContentScript(tab.id);
-
+      const injectedInitially = await ensureContentScript(tab.id);
+      
       let { response, lastError } = await sendMessageWithRetry(
         tab.id,
         {
