@@ -1,10 +1,14 @@
 "use strict";
+// 1. boot / guard
+
 // add an injection guard inside content.js
 // Wrapping the entire whole content.js so it only initializes once per page.
 if (window.__IMG_CITATION_TOOL_LOADED__) {
   console.log("content.js already loaded");
 } else {
   window.__IMG_CITATION_TOOL_LOADED__ = true;
+
+  // 2. url helpers
 
   function normalizeUrl(url) {
     try {
@@ -24,6 +28,7 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
     }
   }
 
+  // 3. image matching helpers
   // pull possible URLs from an <img> including common lazy-load patterns
   function getCandidateUrls(img) {
     const urls = [];
@@ -89,7 +94,7 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
     return best;
   }
 
-  // --- Chunk 3B helpers ---
+  // 4. page metadata helpers
 
   function getCanonicalUrl() {
     const link = document.querySelector('link[rel="canonical"]');
@@ -109,6 +114,66 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
     return (imgEl.referrerPolicy || imgEl.getAttribute("referrerpolicy") || "").trim();
   }
 
+  // 5. semantic extraction helpers
+
+  /* 5.A page-level semantics:
+        hostname
+        metaDescription
+        ogTitle
+        ogDescription
+  */
+  function getHostname() {
+    return window.location.hostname || "";
+  }
+
+  function getMetaDescription() {
+    return document.querySelector("meta[name='description']")?.content || "";
+  }
+
+  function getOgTitle() {
+    return document.querySelector("meta[property='og:title']")?.content || "";
+  }
+
+  function getOgDescription() {
+    return document.querySelector("meta[property='og:description']")?.content || "";
+  }
+
+
+
+
+  //.... TODO
+
+
+  // 6. response payload builders
+  function buildFailurePayload({ imgUrl, pageUrl, pageTitle, canonicalUrl, error }) {
+    return {
+      ok: false,
+      error,
+      pageUrl,
+      pageTitle,
+      canonicalUrl,
+      imageUrl: normalizeUrl(imgUrl),
+    };
+  }
+
+  function buildSuccessPayload({ imgEl, imgUrl, pageUrl, pageTitle, canonicalUrl }) {
+    return {
+      ok: true,
+      pageUrl,
+      pageTitle,
+      canonicalUrl,
+      imageUrl: normalizeUrl(imgEl.currentSrc || imgEl.src || imgUrl),
+      alt: (imgEl.getAttribute("alt") || "").trim(),
+      title: (imgEl.getAttribute("title") || "").trim(),
+      ariaLabel: (imgEl.getAttribute("aria-label") || "").trim(),
+      caption: getFigcaption(imgEl),
+      referrerPolicy: getReferrerPolicy(imgEl),
+    };
+  }
+
+
+  // 7. message listener
+
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request?.type !== "DOWNLOAD_EXTRACT_IMAGE_METADATA") return;
 
@@ -118,43 +183,36 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
     const pageUrl = location.href;
     const pageTitle = document.title;
 
-    // 3B fields (page-level)
+    // page-level
     const canonicalUrl = getCanonicalUrl();
 
     if (!imgEl) {
-      sendResponse({
-        ok: false,
-        error: "no_matching_img",
-        pageUrl,
-        pageTitle,
-        canonicalUrl,
-        imageUrl: normalizeUrl(imgUrl),
-      });
+      sendResponse(
+        buildFailurePayload({
+          imgUrl,
+          pageUrl,
+          pageTitle,
+          canonicalUrl,
+          error: "no_matching_img",
+        })
+      );
       return; // sync response
     }
 
-    const alt = (imgEl.getAttribute("alt") || "").trim();
-    const title = (imgEl.getAttribute("title") || "").trim();
-    const ariaLabel = (imgEl.getAttribute("aria-label") || "").trim();
-
-    // 3B fields (image-level)
-    const caption = getFigcaption(imgEl);
-    const referrerPolicy = getReferrerPolicy(imgEl);
-
-    sendResponse({
-      ok: true,
-      pageUrl,
-      pageTitle,
-      canonicalUrl,
-      imageUrl: normalizeUrl(imgEl.currentSrc || imgEl.src || imgUrl),
-      alt,
-      title,
-      ariaLabel,
-      caption,
-      referrerPolicy,
-    });
+    sendResponse(
+      buildSuccessPayload({
+        imgEl,
+        imgUrl,
+        pageUrl,
+        pageTitle,
+        canonicalUrl,
+      })
+    );
 
     return true;
   });
+
+
+
 }
 
