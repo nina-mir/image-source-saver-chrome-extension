@@ -101,7 +101,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
       // # 2 - Ensure content script exists, then ask for metadata
       const injectedInitially = await ensureContentScript(tab.id);
-      
+
       let { response, lastError } = await sendMessageWithRetry(
         tab.id,
         {
@@ -141,12 +141,20 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           reason: "no_content_script",
           pageUrl: tab.url || null,
           pageTitle: tab.title || null,
-          imageUrl: imageUrl || null,
-          downloadId: finalDownloadId,
-          notes: "",
           canonicalUrl: "",
+          hostname: "",
+          metaDescription: "",
+          ogTitle: "",
+          ogDescription: "",
+          imageUrl: imageUrl || null,
           caption: "",
           referrerPolicy: "",
+          downloadId: finalDownloadId,
+          notes: "",
+          linkedHref: "",
+          linkedText: "",
+          nearestHeading: "",
+          nearestParagraph: ""
         };
 
         console.warn(
@@ -154,6 +162,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           lastError.message
         );
         console.log("Fallback citation:", record);
+
       } else if (!response?.ok) {
         record = {
           id: crypto.randomUUID(),
@@ -163,12 +172,21 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           pageUrl: response?.pageUrl ?? tab.url ?? null,
           pageTitle: response?.pageTitle ?? tab.title ?? null,
           canonicalUrl: response?.canonicalUrl ?? "",
+          hostname: response?.hostname ?? "",
+          metaDescription: response?.metaDescription ?? "",
+          ogTitle: response?.ogTitle ?? "",
+          ogDescription: response?.ogDescription ?? "",
           imageUrl: response?.imageUrl ?? imageUrl ?? null,
           caption: response?.caption ?? "",
           referrerPolicy: response?.referrerPolicy ?? "",
           downloadId: finalDownloadId,
           notes: "",
-        }
+          linkedHref: "",
+          linkedText: "",
+          nearestHeading: "",
+          nearestParagraph: ""
+        };
+
       } else {
         record = {
           id: crypto.randomUUID(),
@@ -177,6 +195,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           pageUrl: response?.pageUrl ?? tab.url ?? null,
           pageTitle: response?.pageTitle ?? tab.title ?? null,
           canonicalUrl: response?.canonicalUrl ?? "",
+          hostname: response?.hostname ?? "",
+          metaDescription: response?.metaDescription ?? "",
+          ogTitle: response?.ogTitle ?? "",
+          ogDescription: response?.ogDescription ?? "",
           imageUrl: response?.imageUrl ?? imageUrl ?? null,
           alt: response?.alt ?? "",
           title: response?.title ?? "",
@@ -185,6 +207,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           referrerPolicy: response?.referrerPolicy ?? "",
           downloadId: finalDownloadId,
           notes: "",
+          linkedHref: response?.linkedHref ?? "",
+          linkedText: response?.linkedText ?? "",
+          nearestHeading: response?.nearestHeading ?? "",
+          nearestParagraph: response?.nearestParagraph ?? "",
         };
       }
 

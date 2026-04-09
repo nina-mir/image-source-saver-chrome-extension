@@ -133,7 +133,11 @@ function recordsToCSV(records) {
     "caption",
     "referrerPolicy",
     "downloadId",
-    "notes"
+    "notes",
+    "hostname",
+    "metaDescription",
+    "ogTitle",
+    "ogDescription"
   ];
   const headerRow = headers.join(",");
 

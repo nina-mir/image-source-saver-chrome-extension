@@ -138,6 +138,107 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
     return document.querySelector("meta[property='og:description']")?.content || "";
   }
 
+  /* 5.B image-neighborhood semantics
+        linkedHref
+        linkedText
+        nearestHeading
+        nearestParagraph
+  */
+
+  function cleanText(text) {
+    return (text || "").replace(/\s+/g, " ").trim();
+  }
+
+  function getLinkedHref(imgEl) {
+    const link = imgEl.closest("a[href]");
+    if (!link) return "";
+    return normalizeUrl(link.getAttribute("href") || "");
+  }
+
+  function getLinkedText(imgEl) {
+    const link = imgEl.closest("a");
+    if (!link) return "";
+
+    // avoid huge blobs of text
+    const text = cleanText(link.innerText || link.textContent || "");
+    return text.slice(0, 300);
+  }
+
+  function isHeading(el) {
+    if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+    return /^H[1-6]$/.test(el.tagName);
+  }
+
+  function getNearestHeading(imgEl) {
+    let node = imgEl.parentElement;
+
+    while (node) {
+      // 1. closest heading inside current container
+      const headingInside = node.querySelector("h1, h2, h3, h4, h5, h6");
+      if (headingInside) {
+        const text = cleanText(headingInside.innerText);
+        if (text) return text.slice(0, 300);
+      }
+
+      // 2. previous heading siblings while walking upward
+      let sibling = node.previousElementSibling;
+      while (sibling) {
+        if (isHeading(sibling)) {
+          const text = cleanText(sibling.innerText);
+          if (text) return text.slice(0, 300);
+        }
+
+        const nestedHeading = sibling.querySelector?.("h1, h2, h3, h4, h5, h6");
+        if (nestedHeading) {
+          const text = cleanText(nestedHeading.innerText);
+          if (text) return text.slice(0, 300);
+        }
+
+        sibling = sibling.previousElementSibling;
+      }
+
+      node = node.parentElement;
+    }
+
+    return "";
+  }
+
+  function getNearestParagraph(imgEl) {
+    let node = imgEl.parentElement;
+
+    while (node) {
+      // 1. paragraph inside the same container
+      const pInside = node.querySelector("p");
+      if (pInside) {
+        const text = cleanText(pInside.innerText);
+        if (text) return text.slice(0, 500);
+      }
+
+      // 2. previous sibling paragraphs
+      let sibling = node.previousElementSibling;
+      while (sibling) {
+        if (sibling.tagName === "P") {
+          const text = cleanText(sibling.innerText);
+          if (text) return text.slice(0, 500);
+        }
+
+        const nestedP = sibling.querySelector?.("p");
+        if (nestedP) {
+          const text = cleanText(nestedP.innerText);
+          if (text) return text.slice(0, 500);
+        }
+
+        sibling = sibling.previousElementSibling;
+      }
+
+      node = node.parentElement;
+    }
+
+    return "";
+  }
+
+
+
 
 
 
@@ -152,6 +253,10 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
       pageUrl,
       pageTitle,
       canonicalUrl,
+      hostname: getHostname(),
+      metaDescription: getMetaDescription(),
+      ogTitle: getOgTitle(),
+      ogDescription: getOgDescription(),
       imageUrl: normalizeUrl(imgUrl),
     };
   }
@@ -162,6 +267,16 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
       pageUrl,
       pageTitle,
       canonicalUrl,
+      hostname: getHostname(),
+      metaDescription: getMetaDescription(),
+      ogTitle: getOgTitle(),
+      ogDescription: getOgDescription(),
+
+      linkedHref: getLinkedHref(imgEl),
+      linkedText: getLinkedText(imgEl),
+      nearestHeading: getNearestHeading(imgEl),
+      nearestParagraph: getNearestParagraph(imgEl),
+
       imageUrl: normalizeUrl(imgEl.currentSrc || imgEl.src || imgUrl),
       alt: (imgEl.getAttribute("alt") || "").trim(),
       title: (imgEl.getAttribute("title") || "").trim(),

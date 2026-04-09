@@ -69,6 +69,7 @@ button#view-last-20:hover{
 #records > li {
     font-size: 1.3rem;
     margin-bottom: 0.3rem;
+    list-style: none;
 }
 
 #log-count {
