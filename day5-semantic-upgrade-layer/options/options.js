@@ -1,6 +1,4 @@
 "use strict";
-
-
 // get records from local storage 
 async function getRecords() {
   const { records } = await chrome.storage.local.get({ records: [] })
@@ -88,10 +86,26 @@ async function renderLast20() {
     img.rel = "noreferrer";
 
     li.append(status, when, page, img);
+
+    // text context info
+    const textContext = capturedText(r)
+    li.append(textContext)
     ul.appendChild(li);
   }
 
 }
+
+// helper function to handle the captured text data
+
+function capturedText(record) {
+  const details = document.createElement("details");
+  const summary = document.createElement("summary");
+  summary.innerText = "text context";
+  details.appendChild(summary);
+  return details;
+}
+
+
 
 
 // CSV related code
