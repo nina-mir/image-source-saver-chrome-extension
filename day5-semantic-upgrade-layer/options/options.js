@@ -102,6 +102,17 @@ function capturedText(record) {
   const summary = document.createElement("summary");
   summary.innerText = "text context";
   details.appendChild(summary);
+  const keys = ["caption", "alt", "ogTitle", "ogDescription", "nearestHeading", "nearestParagraph"]
+  for (const item of keys){
+    const paragraph = document.createElement('p');
+    const keyText = document.createElement('em')
+    keyText.textContent = item + ":"
+    const textInfo = document.createElement('span')
+    textInfo.classList.add('captured-txt')
+    textInfo.innerText = record[item]
+    paragraph.append(keyText, " ", textInfo)
+    details.appendChild(paragraph)
+  }
   return details;
 }
 
