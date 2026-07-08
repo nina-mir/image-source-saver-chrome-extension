@@ -149,6 +149,67 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
     return (text || "").replace(/\s+/g, " ").trim();
   }
 
+  function isProbablyJunkText(text) {
+    const t = cleanText(text).toLowerCase();
+    if (!t) return true;
+
+    const junkPatterns = [
+      "permission details",
+      "view in browser",
+      "image source",
+      "source image",
+      "photograph:",
+      "advertisement",
+      "cookies",
+      "privacy policy",
+      "terms of use",
+      "share",
+      "read more"
+    ];
+
+    return junkPatterns.some(pattern => t.includes(pattern));
+  }
+
+  function isProbablyBadContainer(el) {
+    if (!el) return false;
+
+    const badSelectors = [
+      "nav",
+      "footer",
+      "aside",
+      "[role='navigation']",
+      "[aria-label*='breadcrumb' i]",
+      ".navbox",
+      ".sidebar",
+      ".advert",
+      ".advertisement",
+      ".ad",
+      ".metadata",
+      ".license",
+      ".licensetpl",
+      ".mw-mmv-image-metadata",
+      ".mw-mmv-image-links"
+    ];
+
+    return badSelectors.some(selector => {
+      try {
+        return el.matches?.(selector) || el.closest?.(selector);
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  function getCandidateText(el, maxLength) {
+    if (!el || isProbablyBadContainer(el)) return "";
+
+    const text = cleanText(el.innerText || el.textContent || "");
+    if (isProbablyJunkText(text)) return "";
+
+    return text.slice(0, maxLength);
+  }
+
+
   function getLinkedHref(imgEl) {
     const link = imgEl.closest("a[href]");
     if (!link) return "";
@@ -176,22 +237,26 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
       // 1. closest heading inside current container
       const headingInside = node.querySelector("h1, h2, h3, h4, h5, h6");
       if (headingInside) {
-        const text = cleanText(headingInside.innerText);
-        if (text) return text.slice(0, 300);
+        const text = getCandidateText(headingInside, 300);
+        if (text) return text;
       }
 
       // 2. previous heading siblings while walking upward
       let sibling = node.previousElementSibling;
       while (sibling) {
         if (isHeading(sibling)) {
-          const text = cleanText(sibling.innerText);
-          if (text) return text.slice(0, 300);
+          // const text = cleanText(sibling.innerText);
+          // if (text) return text.slice(0, 300);
+          const text = getCandidateText(sibling, 300);
+          if (text) return text;
         }
 
         const nestedHeading = sibling.querySelector?.("h1, h2, h3, h4, h5, h6");
         if (nestedHeading) {
-          const text = cleanText(nestedHeading.innerText);
-          if (text) return text.slice(0, 300);
+          // const text = cleanText(nestedHeading.innerText);
+          // if (text) return text.slice(0, 300);
+          const text = getCandidateText(nestedHeading, 300);
+          if (text) return text;
         }
 
         sibling = sibling.previousElementSibling;
@@ -210,22 +275,28 @@ if (window.__IMG_CITATION_TOOL_LOADED__) {
       // 1. paragraph inside the same container
       const pInside = node.querySelector("p");
       if (pInside) {
-        const text = cleanText(pInside.innerText);
-        if (text) return text.slice(0, 500);
+        // const text    = cleanText(pInside.innerText);
+        // if (text) return text.slice(0, 500);
+        const text = getCandidateText(pInside, 500);
+        if (text) return text;
       }
 
       // 2. previous sibling paragraphs
       let sibling = node.previousElementSibling;
       while (sibling) {
         if (sibling.tagName === "P") {
-          const text = cleanText(sibling.innerText);
-          if (text) return text.slice(0, 500);
+          // const text = cleanText(sibling.innerText);
+          // if (text) return text.slice(0, 500);
+          const text = getCandidateText(sibling, 500);
+          if (text) return text;
         }
 
         const nestedP = sibling.querySelector?.("p");
         if (nestedP) {
-          const text = cleanText(nestedP.innerText);
-          if (text) return text.slice(0, 500);
+          // const text = cleanText(nestedP.innerText);
+          // if (text) return text.slice(0, 500);
+          const text = getCandidateText(nestedP, 500);
+          if (text) return text;
         }
 
         sibling = sibling.previousElementSibling;
