@@ -1,36 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>img-cite-tool</title>
-    <link rel="stylesheet" href="options.css">
-    <script src="options.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Citation Tool</title>
+  <link rel="stylesheet" href="options.css" />
+  <script src="options.js" defer></script>
 </head>
 
 <body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Local research log</p>
+        <h1>Save Image 'n Context</h1>
+        <p class="subtitle">
+          Save images and keep page, image, and semantic context for later citation work.
+        </p>
+      </div>
+    </header>
 
+    <section class="panel privacy-message">
+      <h2>Privacy</h2>
+      <p>
+        Data is stored locally in <code>chrome.storage.local</code>.
+        <strong>Nothing is uploaded.</strong>
+      </p>
+      <p>
+        Metadata is extracted only when you use the right-click save/log menu.
+      </p>
+    </section>
 
-    <h1><span>image-citation-tool</span></h1>
+    <section class="toolbar panel">
+      <div>
+        <h2>Exports</h2>
+        <p>Download your saved records as JSON or CSV.</p>
+      </div>
 
-    <div class="privacy-message">
-        <p>Data is stored locally in <code>chrome.storage.local.</code> <span>Nothing is uploaded.</span></p>
-        <p>The extension only extracts metadata from the active page when you use the right-click “save/log” menu.</p>
-    </div>
-
-    <div class="export-buttons">
+      <div class="export-buttons">
         <button class="btn" id="export-json">Export JSON</button>
-        <button class="btn" id="export-csv">Export CSV</button>
-    </div>
+        <button class="btn btn-primary" id="export-csv">Export CSV</button>
+      </div>
+    </section>
 
-    <div id="log-count"></div>
+    <section class="panel logs-panel">
+      <div class="logs-header">
+        <div>
+          <h2>Recent captures</h2>
+          <p id="log-count">Loading records...</p>
+        </div>
 
-    <div class="view-logs">
-        <button class="btn" id="view-last-20">View last 20 logs</button>
-        <ul id="records"></ul>
-    </div>
+        <button class="btn btn-secondary" id="view-last-20">
+          Refresh last 20
+        </button>
+      </div>
 
+      <ul id="records" class="record-list"></ul>
+    </section>
+  </main>
 </body>
-
 </html>
